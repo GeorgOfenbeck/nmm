@@ -1,0 +1,14 @@
+
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+
+
+val sharedSettings = Seq(scalaVersion := "2.12.7")
+
+
+lazy val nmmlogic = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("nmmlogic"))
+  .settings(
+    name := "nmmlogic"
+  )
