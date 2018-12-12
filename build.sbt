@@ -12,3 +12,6 @@ lazy val nmmlogic = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "nmmlogic"
   )
+  .settings(
+    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+  )
