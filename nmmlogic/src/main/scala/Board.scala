@@ -1,17 +1,5 @@
 
-sealed abstract class Chip {
-  override def toString: String
-}
 
-case object NoChip extends Chip {
-  override def toString: String = "."
-}
-case object BlackChip extends Chip {
-  override def toString: String = "B"
-}
-case object WhiteChip extends Chip {
-  override def toString: String = "W"
-}
 
 case class NineMen(
                   topLeft: Chip = NoChip,
@@ -23,9 +11,6 @@ case class NineMen(
                   bottomMiddle: Chip = NoChip,
                   bottomRight: Chip = NoChip
                   )
-
-
-
 
 
 object Board {
