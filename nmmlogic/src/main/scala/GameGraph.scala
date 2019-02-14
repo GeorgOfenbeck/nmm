@@ -24,8 +24,8 @@ trait GameGraph2Viz extends GameGraph {
     val maxx = positions.map{case (node,pos) => pos.x}.max
     val maxy = positions.map{case (node,pos) => pos.y}.max
     val pos2node = positions.toSeq.map(x => x.swap).toMap
-    for (x <- 0 until maxx) yield
-      (for (y <- 0 until maxy) yield pos2node.get(Pos(x,y,0)).fold[String](" ")( n => states(n.id).toString)).mkString + "\n"
+    for (x <- 0 to maxx) yield
+      (for (y <- 0 to maxy) yield pos2node.get(Pos(x,y,0)).fold[String](" ")( n => states(n.id).toString)).mkString + "\n"
   }.mkString
 }
 
@@ -37,6 +37,12 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
   val node2id: Map[Node, Int] = nodes.map(n => n -> n.id).toMap
   val id2node: Map[Int, Node] = nodes.map(n => n.id -> n).toMap
 
+  def update(newstates: Vector[Chip]): GameGraph = this.copy(states = newstates)
+  def update(node: Node, nstate: Chip): GameGraph = update(states.updated(node.id, nstate))
+
+
+
+
   val node2neigh: Map[Node, Set[Node]] = {
     edges.foldLeft(Map.empty[Node, Set[Node]])((acc, ele) => {
       val sofar_from = acc.get(ele.from).getOrElse(Set.empty[Node])
@@ -45,45 +51,106 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
     })
   }
 
-  def update(newstates: Vector[Chip]): GameGraph = this.copy(states = newstates)
-
-  def update(node: Node, nstate: Chip): GameGraph = update(states.updated(node.id, nstate))
-
-  val node2mills: Map[Node, Map[Int, Set[Node]]] = {
-    val t = edges.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc, ele) => {
-      def up(acc: Map[Node, Map[Int, Set[Node]]], x: Node, c: Int): Map[Node, Map[Int, Set[Node]]] = {
-        val color = c
-        val from = x
-        val sofar = acc.getOrElse(from, Map.empty[Int, Set[Node]])
-        val sofarc = sofar.getOrElse(color, Set.empty[Node])
-        val updatefromcolor = sofar + (color -> (sofarc + from))
-        acc + (x -> updatefromcolor)
-      }
-
-      val up1 = up(acc, ele.from, ele.color)
-      up(up1, ele.to, ele.color)
+  val node2neighColor: Map[Node, Map[Int, Set[Node]]] = {
+    val way1 = edges.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc, ele) => {
+      val sofar_color = acc.getOrElse(ele.from,Map.empty[Int,Set[Node]])
+      val sofar_set = sofar_color.getOrElse(ele.color,Set.empty[Node])
+      val nset = (sofar_set + ele.to)
+      val nmap = sofar_color + (ele.color -> nset)
+      acc + (ele.from -> nmap)
     })
-    t
+
+    edges.foldLeft(way1)((acc, ele) => {
+      val sofar_color = acc.getOrElse(ele.to,Map.empty[Int,Set[Node]])
+      val sofar_set = sofar_color.getOrElse(ele.color,Set.empty[Node])
+      val nset = (sofar_set + ele.from)
+      val nmap = sofar_color + (ele.color -> nset)
+      acc + (ele.to -> nmap)
+    })
   }
+  
+
+  /**
+    * Node -> colors of that node -> according mills
+    */
+  val node2mills: Map[Node, Map[Int, Set[Node]]] = {
+    node2neighColor.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc,ele) => {
+      val node = ele._1
+      val cmap = ele._2
+
+
+
+      ???
+    })
+  }
+
+  /*
+  {
+    def up(from: Node, to: Node, color: Int,acc: Map[Node, Map[Int, Set[Node]]]): Map[Node, Map[Int, Set[Node]]] = {
+      val sofar = acc.getOrElse(from, Map.empty[Int, Set[Node]])
+      val sofarc = sofar.getOrElse(color, Set.empty[Node])
+      val updatefromcolor = sofar + (color -> (sofarc + to))
+      acc + (from -> updatefromcolor)
+    }
+
+    val partial = edges.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc, ele) => {
+      up(ele.to, ele.from, ele.color, up(ele.from, ele.to, ele.color,up(ele.from, ele.from, ele.color,acc)))
+    })
+
+
+
+    nodes.foldLeft(partial)((acc,node) => {
+
+
+      ???
+    })
+  } */
+
+  val node2edge = edges.foldLeft(Map.empty[Node,Set[Edge]])((acc,ele) => {
+    val nsetf = acc.getOrElse(ele.from,Set.empty) + ele
+    val nsett = acc.getOrElse(ele.to,Set.empty) + ele
+    acc + (ele.from -> nsetf) + (ele.to -> nsett)
+  })
+
+  def getNewNeighbor(color: Int, sofar: Set[Node]) = {
+
+  }
+
+  val xx = nodes.foldLeft(Set[Set[Node]])((acc,ele) => {
+    val outgoingedges = node2edge(ele)
+
+    val edgesbycolor = outgoingedges.groupBy(e => e.color)
+    edgesbycolor.map{ case (color, edgeset) => {
+      edgeset.
+    }}
+    ???
+  })
 
   //val t = node2mills.flatMap( (p => p._2.map( o => o._2)))
 
 
-  val mills: Set[Set[Node]] = node2mills.flatMap((p => p._2.map(o => o._2))).foldLeft(Set.empty[Set[Node]])((acc, ele) => acc + ele)
+  val mills: Set[Set[Node]] = node2mills.flatMap{ case (node, cmap) => cmap.map{ case (color, nodes) => nodes}.toSet}.toSet
+
+
+
+  //node2mills.flatMap((p => p._2.map(o => o._2))).foldLeft(Set.empty[Set[Node]])((acc, ele) => acc + ele)
 
   def checkMill(m: Set[Node]): Boolean = {
+    //require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(NoChip)) false else true
   }
 
-  def checkWhiteMill(m: Set[Node]): Boolean = {
+  private def checkWhiteMill(m: Set[Node]): Boolean = {
+    //require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(WhiteChip)) true else false
   }
 
-  def checkBlackMill(m: Set[Node]): Boolean = {
+  private def checkBlackMill(m: Set[Node]): Boolean = {
+    //require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(BlackChip)) true else false
@@ -138,7 +205,7 @@ object GameGraph {
       Edge(n(5), n(13), 1),
       Edge(n(13), n(20), 1),
 
-      Edge(n(3), n(14), 1),
+      Edge(n(2), n(14), 1),
       Edge(n(14), n(23), 1),
 
       Edge(n(0), n(1), 0),
@@ -200,4 +267,7 @@ object NMM2d_empty extends GameGraph(nodes = GameGraph.createNMM2d._1, edges = G
     })
     tups.map(x => x.swap).toMap
   }
+
+
 }
+
