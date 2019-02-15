@@ -40,9 +40,6 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
   def update(newstates: Vector[Chip]): GameGraph = this.copy(states = newstates)
   def update(node: Node, nstate: Chip): GameGraph = update(states.updated(node.id, nstate))
 
-
-
-
   val node2neigh: Map[Node, Set[Node]] = {
     edges.foldLeft(Map.empty[Node, Set[Node]])((acc, ele) => {
       val sofar_from = acc.get(ele.from).getOrElse(Set.empty[Node])
@@ -51,6 +48,9 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
     })
   }
 
+  /**
+    * Node -> colors -> neighbor with that color
+    */
   val node2neighColor: Map[Node, Map[Int, Set[Node]]] = {
     val way1 = edges.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc, ele) => {
       val sofar_color = acc.getOrElse(ele.from,Map.empty[Int,Set[Node]])
@@ -68,43 +68,34 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
       acc + (ele.to -> nmap)
     })
   }
-  
+
+  def crawlmill(node: Node, color: Int, sofarx: Set[Node] ): Set[Node] = {
+    val sofar = sofarx + node
+    val allneighallcoll = node2neighColor.getOrElse(node,Map.empty[Int,Set[Node]])
+    val allneigh = allneighallcoll.getOrElse(color,Set.empty[Node])
+    val notvisited = allneigh.diff(sofar)
+    notvisited.foldLeft(sofar)((acc,ele) => {
+      crawlmill(ele,color,acc)
+    })
+  }
+
+  def crawlmill(node: Node, colors: Set[Int]): Map[Int,Set[Node]] = {
+    colors.map( c => (c -> crawlmill(node,c,Set.empty))).toMap
+  }
+
+  val node2color: Map[Node,Set[Int]] = node2neighColor.map{ case (node, cmap) => node -> cmap.keySet}
 
   /**
     * Node -> colors of that node -> according mills
     */
   val node2mills: Map[Node, Map[Int, Set[Node]]] = {
-    node2neighColor.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc,ele) => {
+    node2color.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc,ele) => {
       val node = ele._1
       val cmap = ele._2
-
-
-
-      ???
+      acc + (node -> crawlmill(node,cmap))
     })
   }
 
-  /*
-  {
-    def up(from: Node, to: Node, color: Int,acc: Map[Node, Map[Int, Set[Node]]]): Map[Node, Map[Int, Set[Node]]] = {
-      val sofar = acc.getOrElse(from, Map.empty[Int, Set[Node]])
-      val sofarc = sofar.getOrElse(color, Set.empty[Node])
-      val updatefromcolor = sofar + (color -> (sofarc + to))
-      acc + (from -> updatefromcolor)
-    }
-
-    val partial = edges.foldLeft(Map.empty[Node, Map[Int, Set[Node]]])((acc, ele) => {
-      up(ele.to, ele.from, ele.color, up(ele.from, ele.to, ele.color,up(ele.from, ele.from, ele.color,acc)))
-    })
-
-
-
-    nodes.foldLeft(partial)((acc,node) => {
-
-
-      ???
-    })
-  } */
 
   val node2edge = edges.foldLeft(Map.empty[Node,Set[Edge]])((acc,ele) => {
     val nsetf = acc.getOrElse(ele.from,Set.empty) + ele
@@ -112,45 +103,24 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
     acc + (ele.from -> nsetf) + (ele.to -> nsett)
   })
 
-  def getNewNeighbor(color: Int, sofar: Set[Node]) = {
-
-  }
-
-  val xx = nodes.foldLeft(Set[Set[Node]])((acc,ele) => {
-    val outgoingedges = node2edge(ele)
-
-    val edgesbycolor = outgoingedges.groupBy(e => e.color)
-    edgesbycolor.map{ case (color, edgeset) => {
-      edgeset.
-    }}
-    ???
-  })
-
-  //val t = node2mills.flatMap( (p => p._2.map( o => o._2)))
-
-
   val mills: Set[Set[Node]] = node2mills.flatMap{ case (node, cmap) => cmap.map{ case (color, nodes) => nodes}.toSet}.toSet
 
-
-
-  //node2mills.flatMap((p => p._2.map(o => o._2))).foldLeft(Set.empty[Set[Node]])((acc, ele) => acc + ele)
-
   def checkMill(m: Set[Node]): Boolean = {
-    //require(m.size == 3)
+    require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(NoChip)) false else true
   }
 
   private def checkWhiteMill(m: Set[Node]): Boolean = {
-    //require(m.size == 3)
+    require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(WhiteChip)) true else false
   }
 
   private def checkBlackMill(m: Set[Node]): Boolean = {
-    //require(m.size == 3)
+    require(m.size == 3)
     val chips = m.map(x => states(x.id))
     if (chips.size > 1) false
     else if (chips.contains(BlackChip)) true else false

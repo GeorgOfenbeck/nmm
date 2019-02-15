@@ -85,8 +85,6 @@ object GameGraphTest extends Properties("GraphTest") {
   }
 
 
-  //val twoofEach = genRandPlacedBoard(2,2)
-  //property("2 of each cannot check") = forAll(twoofEach)(board => board.getNrMills() == 0)
 
   property("empty board has no mill") = forAll(genEmptyGGraph())(board => board.getNrMills() == 0)
 
@@ -125,6 +123,27 @@ object GameGraphTest extends Properties("GraphTest") {
   property("every node is part of exactly 2 colors") = forAll(genEmptyGGraph())(board =>
     board.node2mills.filter{ case (n, cm) => cm.size == 2 }.size == board.node2mills.size)
 
+
+  property("xmills are sets of 3 in mills") =  forAll(genEmptyGGraph())(board => {
+    val x = board.mills.filter(p => p.size != 3).isEmpty
+    if (x == false)
+      println(".")
+    x
+  })
+
+
+  property("set one alone is not mill") = forAll(genPlaceOne(NMM2d_empty,WhiteChip))(board => {
+    val (chip,idx) = board.states.zipWithIndex.filter {case (c, idx) => c == WhiteChip}.head
+    val node = board.id2node(idx)
+    !board.checkMill(board.node2mills(node).head._2)
+  })
+
+
+  property("1 cannot check") = forAll(genRandPlacedBoard(1,0))(board => board.getNrMills() == 0)
+  property("oneWhite") = forAll(genRandPlacedBoard(1,0))(board => board.getNrMills() == 0)
+
+
+  /*
   property("every node is bidrectional in terms of mills") = forAll(genEmptyGGraph())(board => {
     val m = board.node2mills
 
@@ -133,6 +152,7 @@ object GameGraphTest extends Properties("GraphTest") {
         node -> cmap.flatMap { case (color, nodes) => nodes }.toSet
       }
     }
+
     val res = one2n.map{
       case (node, nset) => {
         val t = nset.map(other => one2n(other).contains(node))
@@ -140,8 +160,9 @@ object GameGraphTest extends Properties("GraphTest") {
       }
     }.toSet
     !res.contains(true)
-  })
+  })*/
 
+  /*
   property("mills are sets of 3 in node2mills") =  forAll(genEmptyGGraph())(board => {
     val m = board.node2mills
 
@@ -149,21 +170,17 @@ object GameGraphTest extends Properties("GraphTest") {
       case (node, cmap) => { cmap.map { case (color, nodes) => {
 
         if (nodes.size == 3) {
-          println(nodes)
+          //println(nodes)
           true
         }
         else {
-          println(nodes)
+          //println(nodes)
           false
         }
       }
       }.toSet } }.toSet
     one2n.contains(false)
-  })
-
-  property("mills are sets of 3 in mills") =  forAll(genEmptyGGraph())(board => {
-    !board.mills.map(x => x.size == 3).contains(false)
-  })
+  })*/
 
   /*
   def checkMill(m: Set[Node]): Boolean = {
@@ -173,17 +190,7 @@ object GameGraphTest extends Properties("GraphTest") {
   }
   */
 
-
-/*
-  property("set one alone is not mill") = forAll(genPlaceOne(NMM2d_empty,WhiteChip))(board => {
-    val (chip,idx) = board.states.zipWithIndex.filter {case (c, idx) => c == WhiteChip}.head
-    val node = board.id2node(idx)
-    !board.checkMill(Set(node))
-  })
-*/
-
-  //property("1 cannot check") = forAll(genRandPlacedBoard(1,0))(board => board.getNrMills() == 0)
-  //property("oneWhite") = forAll(genRandPlacedBoard(1,0))(board => board.getNrMills() == 0)
-
+  //val twoofEach = genRandPlacedBoard(2,2)
+  //property("2 of each cannot check") = forAll(twoofEach)(board => board.getNrMills() == 0)
 
 }
