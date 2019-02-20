@@ -84,8 +84,6 @@ object GameGraphTest extends Properties("GraphTest") {
     } yield board
   }
 
-
-
   property("empty board has no mill") = forAll(genEmptyGGraph())(board => board.getNrMills() == 0)
 
   val empty = NMM2d_empty

@@ -127,10 +127,14 @@ case class GameGraph(val nodes: Set[Node], val edges: Set[Edge], val states: Vec
   }
 
   def getNrMills(): Int = mills.foldLeft(0)((acc, ele) => if (checkMill(ele)) acc + 1 else acc)
+  def getActiveMills(): Set[Set[Node]] = mills.foldLeft(Set.empty[Set[Node]])((acc, ele) => if (checkMill(ele)) acc + ele else acc)
 
   def getNrWhiteMills(): Int = mills.foldLeft(0)((acc, ele) => if (checkWhiteMill(ele)) acc + 1 else acc)
+  def getActiveWhiteMills(): Set[Set[Node]] = mills.foldLeft(Set.empty[Set[Node]])((acc, ele) => if (checkWhiteMill(ele)) acc + ele else acc)
 
   def getNrBlackMills(): Int = mills.foldLeft(0)((acc, ele) => if (checkBlackMill(ele)) acc + 1 else acc)
+  def getActiveBlackMills(): Set[Set[Node]] = mills.foldLeft(Set.empty[Set[Node]])((acc, ele) => if (checkBlackMill(ele)) acc + ele else acc)
+
   def isInMill(n: Node): Boolean = node2mills.get(n).map(m => m.map(s => checkMill(s._2)).reduce((a, b) => a || b)).getOrElse(false)
 }
 
