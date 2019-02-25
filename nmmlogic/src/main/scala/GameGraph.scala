@@ -1,3 +1,7 @@
+package com.ofenbeck
+package nmm
+package logic
+
 
 sealed abstract class Chip {
   override def toString: String

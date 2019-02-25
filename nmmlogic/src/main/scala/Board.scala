@@ -1,4 +1,6 @@
-
+package com.ofenbeck
+package nmm
+package logic
 
 
 case class NineMen(
